@@ -1,0 +1,50 @@
+{
+  "namespace": "org.gbif.geocode.api.model",
+  "type": "record",
+  "name": "LocationAvro",
+  "doc": "Represents a location feature.",
+  "fields": [
+    {
+      "name": "id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Identifier for the location feature, preferably globally unique."
+    },
+    {
+      "name": "type",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Type; GBIF-assigned identifier for the source."
+    },
+    {
+      "name": "source",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Source; URL or other reference to the source for the location feature."
+    },
+    {
+      "name": "title",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Title of the location feature, such as a country name, sea name or administrative area name."
+    },
+    {
+      "name": "isoCountryCode2Digit",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "ISO 3166 Alpha 2 country code, if applicable."
+    },
+    {
+      "name": "distance",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Distance from the location, or 0 if the query was within the boundary of the location."
+    },
+    {
+      "name": "distanceMeters",
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Distance from the location in meters, or 0 if the query was within the boundary of the location."
+    }
+  ]
+}

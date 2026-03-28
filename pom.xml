@@ -62,6 +62,7 @@
 
   <modules>
     <module>geocode-api</module>
+    <module>geocode-api-avro</module>
     <module>geocode-ws</module>
     <module>geocode-ws-client</module>
   </modules>
@@ -87,7 +88,7 @@
 
     <!-- DB -->
     <hikaricp.version>5.0.1</hikaricp.version>
-    <mybatis.version>3.5.2</mybatis.version>
+    <mybatis.version>3.5.6</mybatis.version>
     <postgres.version>42.3.3</postgres.version>
 
     <!-- test -->
@@ -97,12 +98,12 @@
     <!-- Third party dependencies -->
     <feign.version>10.12</feign.version>
     <layers-store.version>2.2.0</layers-store.version>
-    <logback.version>1.2.3</logback.version>
+    <logback.version>1.2.13</logback.version>
     <logstash-encoder.version>6.6</logstash-encoder.version>
     <slf4j.version>1.7.30</slf4j.version>
     <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
     <guava.version>32.1.2-jre</guava.version>
-    <zookeeper.version>3.8.1</zookeeper.version>
+    <zookeeper.version>3.8.6</zookeeper.version>
     <curator-framework.version>5.5.0-disable-connectstr-updates</curator-framework.version>
     <curator.version>5.5.0</curator.version>
     <curator-test.version>5.5.0</curator-test.version>
@@ -177,6 +178,11 @@
       <dependency>
         <groupId>org.gbif.geocode</groupId>
         <artifactId>geocode-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif.geocode</groupId>
+        <artifactId>geocode-api-avro</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

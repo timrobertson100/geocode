@@ -6,26 +6,28 @@
   "fields": [
     {
       "name": "id",
-      "type": ["null", "string"],
-      "default": null,
-      "doc": "Identifier for the location feature, preferably globally unique."
+      "type": "string",
+      "doc": "Identifier for the location feature, preferably globally unique (with any known prefix stripped and stored in id_prefix)."
     },
     {
       "name": "type",
-      "type": ["null", "string"],
-      "default": null,
+      "type": "string",
       "doc": "Type; GBIF-assigned identifier for the source."
     },
     {
       "name": "source",
-      "type": ["null", "string"],
-      "default": null,
-      "doc": "Source; URL or other reference to the source for the location feature."
+      "type": {
+        "type": "enum",
+        "name": "LocationSource",
+        "namespace": "org.gbif.geocode.api.model",
+        "doc": "Known sources for location features. Add new values here as needed.",
+        "symbols": ["GADM", "WGSRPD", "CONTINENT", "MARINE_REGIONS"]
+      },
+      "doc": "Source of the location feature, encoded as an enum to minimise bytes."
     },
     {
       "name": "title",
-      "type": ["null", "string"],
-      "default": null,
+      "type": "string",
       "doc": "Title of the location feature, such as a country name, sea name or administrative area name."
     },
     {
@@ -36,15 +38,25 @@
     },
     {
       "name": "distance",
-      "type": ["null", "double"],
-      "default": null,
+      "type": "double",
       "doc": "Distance from the location, or 0 if the query was within the boundary of the location."
     },
     {
       "name": "distanceMeters",
-      "type": ["null", "double"],
-      "default": null,
+      "type": "double",
       "doc": "Distance from the location in meters, or 0 if the query was within the boundary of the location."
+    },
+    {
+      "name": "id_prefix",
+      "type": ["null", {
+        "type": "enum",
+        "name": "LocationIdPrefix",
+        "namespace": "org.gbif.geocode.api.model",
+        "doc": "Known prefixes that may be stripped from the id field to save space. Add new values here as needed.",
+        "symbols": ["MRGID"]
+      }],
+      "default": null,
+      "doc": "Known prefix stripped from the id field. Restore by prepending the prefix URL to id when decoding."
     }
   ]
 }

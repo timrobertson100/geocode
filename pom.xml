@@ -62,6 +62,7 @@
 
   <modules>
     <module>geocode-api</module>
+    <module>geocode-api-avro</module>
     <module>geocode-ws</module>
     <module>geocode-ws-client</module>
   </modules>
@@ -177,6 +178,11 @@
       <dependency>
         <groupId>org.gbif.geocode</groupId>
         <artifactId>geocode-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.gbif.geocode</groupId>
+        <artifactId>geocode-api-avro</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

@@ -10,8 +10,26 @@
       "doc": "Identifier for the location feature, preferably globally unique (with any known prefix stripped and stored in id_prefix)."
     },
     {
+      "name": "id_prefix",
+      "type": ["null", {
+        "type": "enum",
+        "name": "LocationIdPrefix",
+        "namespace": "org.gbif.geocode.api.model",
+        "doc": "Known prefixes that may be stripped from the id field to save space. Add new values here as needed.",
+        "symbols": ["MRGID"]
+      }],
+      "default": null,
+      "doc": "Known prefix stripped from the id field. Restore by prepending the prefix URL to id when decoding."
+    },
+    {
       "name": "type",
-      "type": "string",
+      "type": {
+        "type": "enum",
+        "name": "LocationType",
+        "namespace": "org.gbif.geocode.api.model",
+        "doc": "Known types for location features. Add new values here as needed.",
+        "symbols": ["GADM0", "GADM1", "GADM2", "GADM3", "WGSRPD", "Continent", "Political"]
+      },
       "doc": "Type; GBIF-assigned identifier for the source."
     },
     {
@@ -38,25 +56,15 @@
     },
     {
       "name": "distance",
-      "type": "double",
-      "doc": "Distance from the location, or 0 if the query was within the boundary of the location."
+      "type": ["null", "double"],
+      "default": null,
+      "doc": "Distance from the location in degrees, or 0 if the query was within the boundary of the location. Null if not applicable or unknown."
     },
     {
       "name": "distanceMeters",
-      "type": "double",
-      "doc": "Distance from the location in meters, or 0 if the query was within the boundary of the location."
-    },
-    {
-      "name": "id_prefix",
-      "type": ["null", {
-        "type": "enum",
-        "name": "LocationIdPrefix",
-        "namespace": "org.gbif.geocode.api.model",
-        "doc": "Known prefixes that may be stripped from the id field to save space. Add new values here as needed.",
-        "symbols": ["MRGID"]
-      }],
+      "type": ["null", "double"],
       "default": null,
-      "doc": "Known prefix stripped from the id field. Restore by prepending the prefix URL to id when decoding."
+      "doc": "Distance from the location in meters, or 0 if the query was within the boundary of the location. Null if not applicable or unknown."
     }
   ]
 }

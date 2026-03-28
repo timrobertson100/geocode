@@ -105,7 +105,7 @@ public class LocationAvroConverterTest {
 
     LocationAvro encoded = LocationAvroConverter.encode(first);
     assertEquals("ECU", encoded.getId());
-    assertEquals("GADM0", encoded.getType());
+    assertEquals(LocationType.GADM0, encoded.getType());
     assertEquals(LocationSource.GADM, encoded.getSource());
     assertNull(encoded.getIdPrefix());
 
@@ -148,6 +148,33 @@ public class LocationAvroConverterTest {
   @Test
   public void testDecodeNullReturnsNull() {
     assertNull(LocationAvroConverter.decode(null));
+  }
+
+  /**
+   * Verifies that null distance and distanceMeters in a Location are preserved through
+   * encode and decode.
+   */
+  @Test
+  public void testNullDistances() throws Exception {
+    List<Location> locations = loadLocations();
+    Location base = locations.get(0);
+
+    Location loc = new Location();
+    loc.setId(base.getId());
+    loc.setType(base.getType());
+    loc.setSource(base.getSource());
+    loc.setTitle(base.getTitle());
+    loc.setIsoCountryCode2Digit(base.getIsoCountryCode2Digit());
+    loc.setDistance(null);
+    loc.setDistanceMeters(null);
+
+    LocationAvro encoded = LocationAvroConverter.encode(loc);
+    assertNull(encoded.getDistance());
+    assertNull(encoded.getDistanceMeters());
+
+    Location decoded = LocationAvroConverter.decode(encoded);
+    assertNull(decoded.getDistance());
+    assertNull(decoded.getDistanceMeters());
   }
 
   /**

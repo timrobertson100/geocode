@@ -6,6 +6,7 @@
       "source": "http://gadm.org/",
       "isoCountryCode2Digit": "EC",
       "distance": 0.0,
+      "distanceMeters": 0.0,
       "title": "Ecuador"
     },
     {
@@ -14,6 +15,7 @@
       "source": "http://gadm.org/",
       "isoCountryCode2Digit": "EC",
       "distance": 0.0,
+      "distanceMeters": 0.0,
       "title": "Pichincha"
     },
     {
@@ -22,6 +24,7 @@
       "source": "http://gadm.org/",
       "isoCountryCode2Digit": "EC",
       "distance": 0.0,
+      "distanceMeters": 0.0,
       "title": "San Miguel de los Bancos"
     },
     {
@@ -30,6 +33,7 @@
       "source": "http://gadm.org/",
       "isoCountryCode2Digit": "EC",
       "distance": 0.0,
+      "distanceMeters": 0.0,
       "title": "Mindo"
     },
     {
@@ -38,6 +42,7 @@
       "source": "http://www.tdwg.org/standards/109",
       "isoCountryCode2Digit": "EC",
       "distance": 0.0,
+      "distanceMeters": 0.0,
       "title": "Ecuador"
     },
     {
@@ -46,6 +51,7 @@
       "source": "https://github.com/gbif/continents",
       "isoCountryCode2Digit": "",
       "distance": 0.0,
+      "distanceMeters": 0.0,
       "title": "SOUTH_AMERICA"
     },
     {
@@ -54,6 +60,7 @@
       "source": "https://www.marineregions.org/",
       "isoCountryCode2Digit": "EC",
       "distance": 0.0,
+      "distanceMeters": 0.0,
       "title": "Ecuador"
     },
     {
@@ -62,6 +69,7 @@
       "source": "http://gadm.org/",
       "isoCountryCode2Digit": "EC",
       "distance": 0.038879275983394995,
+      "distanceMeters": 4327.5,
       "title": "San Miguel De Los Bancos"
     },
     {
@@ -70,6 +78,7 @@
       "source": "http://gadm.org/",
       "isoCountryCode2Digit": "EC",
       "distance": 0.04057529715676165,
+      "distanceMeters": 4516.2,
       "title": "Quito"
     },
     {
@@ -78,6 +87,7 @@
       "source": "http://gadm.org/",
       "isoCountryCode2Digit": "EC",
       "distance": 0.04057529715676165,
+      "distanceMeters": 4516.2,
       "title": "Lloa"
     }
   ]

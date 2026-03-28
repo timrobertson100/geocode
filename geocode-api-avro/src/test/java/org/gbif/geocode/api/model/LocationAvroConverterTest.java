@@ -15,10 +15,14 @@
  */
 package org.gbif.geocode.api.model;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumWriter;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,11 +56,16 @@ public class LocationAvroConverterTest {
       location.setTitle(node.get("title").asText());
       location.setIsoCountryCode2Digit(node.get("isoCountryCode2Digit").asText());
       location.setDistance(node.get("distance").asDouble());
+      location.setDistanceMeters(node.get("distanceMeters").asDouble());
       locations.add(location);
     }
     return locations;
   }
 
+  /**
+   * Round-trip encode→decode must reproduce the original {@link Location} exactly for all test
+   * locations, including the marine-regions entry whose id carries a known prefix.
+   */
   @Test
   public void testEncodeAndDecode() throws Exception {
     List<Location> locations = loadLocations();
@@ -65,13 +74,6 @@ public class LocationAvroConverterTest {
     for (Location original : locations) {
       LocationAvro encoded = LocationAvroConverter.encode(original);
       assertNotNull(encoded);
-      assertEquals(original.getId(), encoded.getId());
-      assertEquals(original.getType(), encoded.getType());
-      assertEquals(original.getSource(), encoded.getSource());
-      assertEquals(original.getTitle(), encoded.getTitle());
-      assertEquals(original.getIsoCountryCode2Digit(), encoded.getIsoCountryCode2Digit());
-      assertEquals(original.getDistance(), encoded.getDistance());
-      assertEquals(original.getDistanceMeters(), encoded.getDistanceMeters());
 
       Location decoded = LocationAvroConverter.decode(encoded);
       assertNotNull(decoded);
@@ -85,16 +87,10 @@ public class LocationAvroConverterTest {
     }
   }
 
-  @Test
-  public void testEncodeNullReturnsNull() {
-    assertNull(LocationAvroConverter.encode(null));
-  }
-
-  @Test
-  public void testDecodeNullReturnsNull() {
-    assertNull(LocationAvroConverter.decode(null));
-  }
-
+  /**
+   * Verifies that the GADM source URL is encoded to {@link LocationSource#GADM} and that a
+   * plain GADM id is stored unchanged (no prefix to strip).
+   */
   @Test
   public void testFirstLocation() throws Exception {
     List<Location> locations = loadLocations();
@@ -110,6 +106,8 @@ public class LocationAvroConverterTest {
     LocationAvro encoded = LocationAvroConverter.encode(first);
     assertEquals("ECU", encoded.getId());
     assertEquals("GADM0", encoded.getType());
+    assertEquals(LocationSource.GADM, encoded.getSource());
+    assertNull(encoded.getIdPrefix());
 
     Location decoded = LocationAvroConverter.decode(encoded);
     assertEquals(first.getId(), decoded.getId());
@@ -118,5 +116,81 @@ public class LocationAvroConverterTest {
     assertEquals(first.getIsoCountryCode2Digit(), decoded.getIsoCountryCode2Digit());
     assertEquals(first.getDistance(), decoded.getDistance());
     assertEquals(first.getTitle(), decoded.getTitle());
+  }
+
+  /**
+   * Verifies that the Marine Regions source is encoded to {@link LocationSource#MARINE_REGIONS},
+   * that the MRGID prefix is stripped from the id and stored in {@link LocationIdPrefix#MRGID},
+   * and that decoding restores the full original id.
+   */
+  @Test
+  public void testMarineRegionsLocation() throws Exception {
+    Location marine = loadLocations().stream()
+        .filter(l -> l.getId().startsWith("http://marineregions.org/mrgid/"))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No marine-regions location in test data"));
+
+    LocationAvro encoded = LocationAvroConverter.encode(marine);
+    assertEquals("8431", encoded.getId());
+    assertEquals(LocationSource.MARINE_REGIONS, encoded.getSource());
+    assertEquals(LocationIdPrefix.MRGID, encoded.getIdPrefix());
+
+    Location decoded = LocationAvroConverter.decode(encoded);
+    assertEquals("http://marineregions.org/mrgid/8431", decoded.getId());
+    assertEquals("https://www.marineregions.org/", decoded.getSource());
+  }
+
+  @Test
+  public void testEncodeNullReturnsNull() {
+    assertNull(LocationAvroConverter.encode(null));
+  }
+
+  @Test
+  public void testDecodeNullReturnsNull() {
+    assertNull(LocationAvroConverter.decode(null));
+  }
+
+  /**
+   * Utility: generates 10,000 locations (cycling through the test data with slightly modified
+   * ids and titles), writes them as plain JSON and as Avro to temp files, then prints the
+   * resulting file sizes so the space saving can be seen at a glance.
+   */
+  @Test
+  public void reportFileSizes() throws Exception {
+    List<Location> baseLocations = loadLocations();
+    int total = 10_000;
+
+    List<Location> locations = new ArrayList<>(total);
+    for (int i = 0; i < total; i++) {
+      Location base = baseLocations.get(i % baseLocations.size());
+      Location loc = new Location();
+      loc.setId(base.getId() + "_" + i);
+      loc.setType(base.getType());
+      loc.setSource(base.getSource());
+      loc.setTitle(base.getTitle() + " " + i);
+      loc.setIsoCountryCode2Digit(base.getIsoCountryCode2Digit());
+      loc.setDistance(base.getDistance());
+      loc.setDistanceMeters(base.getDistanceMeters());
+      locations.add(loc);
+    }
+
+    // Write JSON
+    File jsonFile = File.createTempFile("locations-", ".json");
+    jsonFile.deleteOnExit();
+    MAPPER.writeValue(jsonFile, locations);
+
+    // Write Avro
+    File avroFile = File.createTempFile("locations-", ".avro");
+    avroFile.deleteOnExit();
+    DatumWriter<LocationAvro> datumWriter = new SpecificDatumWriter<>(LocationAvro.class);
+    try (DataFileWriter<LocationAvro> dataFileWriter = new DataFileWriter<>(datumWriter)) {
+      dataFileWriter.create(LocationAvro.getClassSchema(), avroFile);
+      for (Location loc : locations) {
+        dataFileWriter.append(LocationAvroConverter.encode(loc));
+      }
+    }
+
+    System.out.printf("%,d locations → JSON: %,d bytes | Avro: %,d bytes%n",
+        total, jsonFile.length(), avroFile.length());
   }
 }

@@ -15,8 +15,20 @@
  */
 package org.gbif.geocode.api.model;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Provides conversion between {@link Location} and {@link LocationAvro}.
+ *
+ * <p>Optimisations applied during encoding:
+ * <ul>
+ *   <li>The {@code source} URL is stored as a compact {@link LocationSource} enum.</li>
+ *   <li>Well-known ID prefixes are stripped from {@code id} and recorded in {@code id_prefix},
+ *       saving repeated prefix bytes per record.</li>
+ * </ul>
+ * Both mappings are easy to extend: add a new entry to {@link #SOURCE_MAP} or
+ * {@link #ID_PREFIX_URL_MAP} and add the corresponding symbol to the Avro schema.
  */
 public class LocationAvroConverter {
 
@@ -24,29 +36,86 @@ public class LocationAvroConverter {
     // utility class
   }
 
+  // ---------------------------------------------------------------------------
+  // Source URL <-> enum mappings
+  // To add a new source: add an entry here AND a symbol to LocationSource in Location.avsc
+  // ---------------------------------------------------------------------------
+
+  private static final Map<String, LocationSource> SOURCE_MAP = new LinkedHashMap<>();
+  private static final Map<LocationSource, String> SOURCE_URL_MAP = new LinkedHashMap<>();
+
+  static {
+    addSource("http://gadm.org/",                      LocationSource.GADM);
+    addSource("http://www.tdwg.org/standards/109",     LocationSource.WGSRPD);
+    addSource("https://github.com/gbif/continents",    LocationSource.CONTINENT);
+    addSource("https://www.marineregions.org/",        LocationSource.MARINE_REGIONS);
+  }
+
+  private static void addSource(String url, LocationSource source) {
+    SOURCE_MAP.put(url, source);
+    SOURCE_URL_MAP.put(source, url);
+  }
+
+  // ---------------------------------------------------------------------------
+  // ID prefix enum -> prefix URL mappings
+  // To add a new prefix: add an entry here AND a symbol to LocationIdPrefix in Location.avsc
+  // ---------------------------------------------------------------------------
+
+  private static final Map<LocationIdPrefix, String> ID_PREFIX_URL_MAP = new LinkedHashMap<>();
+
+  static {
+    ID_PREFIX_URL_MAP.put(LocationIdPrefix.MRGID, "http://marineregions.org/mrgid/");
+  }
+
   /**
    * Encodes a {@link Location} to a {@link LocationAvro}.
    *
+   * <p>The {@code source} string is converted to a {@link LocationSource} enum and any known
+   * prefix is stripped from {@code id} and stored in {@code id_prefix}.
+   *
    * @param location the location to encode
    * @return the encoded LocationAvro
+   * @throws IllegalArgumentException if the source URL is not a known value
    */
   public static LocationAvro encode(Location location) {
     if (location == null) {
       return null;
     }
+
+    LocationSource sourceEnum = SOURCE_MAP.get(location.getSource());
+    if (sourceEnum == null) {
+      throw new IllegalArgumentException("Unknown source URL: " + location.getSource());
+    }
+
+    String id = location.getId();
+    LocationIdPrefix idPrefix = null;
+    // Iteration order is insertion order (LinkedHashMap). If prefixes can overlap,
+    // list longer/more-specific prefixes first so the most precise match wins.
+    for (Map.Entry<LocationIdPrefix, String> entry : ID_PREFIX_URL_MAP.entrySet()) {
+      if (id != null && id.startsWith(entry.getValue())) {
+        idPrefix = entry.getKey();
+        id = id.substring(entry.getValue().length());
+        break;
+      }
+    }
+
     return LocationAvro.newBuilder()
-      .setId(location.getId())
+      .setId(id)
       .setType(location.getType())
-      .setSource(location.getSource())
+      .setSource(sourceEnum)
       .setTitle(location.getTitle())
       .setIsoCountryCode2Digit(location.getIsoCountryCode2Digit())
-      .setDistance(location.getDistance())
-      .setDistanceMeters(location.getDistanceMeters())
+      .setDistance(location.getDistance() == null ? 0.0 : location.getDistance())
+      .setDistanceMeters(location.getDistanceMeters() == null ? 0.0 : location.getDistanceMeters())
+      .setIdPrefix(idPrefix)
       .build();
   }
 
   /**
    * Decodes a {@link LocationAvro} to a {@link Location}.
+   *
+   * <p>The {@link LocationSource} enum is converted back to its source URL string and any
+   * stripped {@code id_prefix} is prepended to {@code id}.
    *
    * @param locationAvro the LocationAvro to decode
    * @return the decoded Location
@@ -55,10 +124,16 @@ public class LocationAvroConverter {
     if (locationAvro == null) {
       return null;
     }
+
+    String id = locationAvro.getId();
+    if (locationAvro.getIdPrefix() != null) {
+      id = ID_PREFIX_URL_MAP.get(locationAvro.getIdPrefix()) + id;
+    }
+
     Location location = new Location();
-    location.setId(locationAvro.getId());
+    location.setId(id);
     location.setType(locationAvro.getType());
-    location.setSource(locationAvro.getSource());
+    location.setSource(SOURCE_URL_MAP.get(locationAvro.getSource()));
     location.setTitle(locationAvro.getTitle());
     location.setIsoCountryCode2Digit(locationAvro.getIsoCountryCode2Digit());
     location.setDistance(locationAvro.getDistance());

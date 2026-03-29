@@ -23,11 +23,14 @@ import java.util.Map;
  *
  * <p>Optimisations applied during encoding:
  * <ul>
+ *   <li>The {@code type} string is stored as a compact {@link LocationType} enum.</li>
  *   <li>The {@code source} URL is stored as a compact {@link LocationSource} enum.</li>
  *   <li>Well-known ID prefixes are stripped from {@code id} and recorded in {@code id_prefix},
  *       saving repeated prefix bytes per record.</li>
  * </ul>
- * Both mappings are easy to extend: add a new entry to {@link #SOURCE_MAP} or
+ * The type mapping uses {@link LocationType#valueOf(String)} directly, so the type string must
+ * exactly match a symbol in the {@link LocationType} enum.  The source and prefix mappings are
+ * easy to extend: add a new entry to {@link #SOURCE_MAP} or
  * {@link #ID_PREFIX_URL_MAP} and add the corresponding symbol to the Avro schema.
  */
 public class LocationAvroConverter {
@@ -75,7 +78,7 @@ public class LocationAvroConverter {
    *
    * @param location the location to encode
    * @return the encoded LocationAvro
-   * @throws IllegalArgumentException if the source URL is not a known value
+   * @throws IllegalArgumentException if the source URL or type string is not a known value
    */
   public static LocationAvro encode(Location location) {
     if (location == null) {
@@ -86,6 +89,8 @@ public class LocationAvroConverter {
     if (sourceEnum == null) {
       throw new IllegalArgumentException("Unknown source URL: " + location.getSource());
     }
+
+    LocationType typeEnum = LocationType.valueOf(location.getType());
 
     String id = location.getId();
     LocationIdPrefix idPrefix = null;
@@ -101,13 +106,13 @@ public class LocationAvroConverter {
 
     return LocationAvro.newBuilder()
       .setId(id)
-      .setType(location.getType())
+      .setIdPrefix(idPrefix)
+      .setType(typeEnum)
       .setSource(sourceEnum)
       .setTitle(location.getTitle())
       .setIsoCountryCode2Digit(location.getIsoCountryCode2Digit())
-      .setDistance(location.getDistance() == null ? 0.0 : location.getDistance())
-      .setDistanceMeters(location.getDistanceMeters() == null ? 0.0 : location.getDistanceMeters())
-      .setIdPrefix(idPrefix)
+      .setDistance(location.getDistance())
+      .setDistanceMeters(location.getDistanceMeters())
       .build();
   }
 
@@ -132,7 +137,7 @@ public class LocationAvroConverter {
 
     Location location = new Location();
     location.setId(id);
-    location.setType(locationAvro.getType());
+    location.setType(locationAvro.getType().toString());
     location.setSource(SOURCE_URL_MAP.get(locationAvro.getSource()));
     location.setTitle(locationAvro.getTitle());
     location.setIsoCountryCode2Digit(locationAvro.getIsoCountryCode2Digit());

@@ -20,11 +20,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.avro.file.DataFileReader;
-import org.apache.avro.file.SeekableByteArrayInput;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.BinaryDecoder;
+import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.junit.jupiter.api.Test;
 
@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -226,14 +227,14 @@ public class LocationAvroConverterTest {
   }
 
   /**
-   * Decodes an Avro byte[] container into a list of {@link LocationAvro} records.
+   * Decodes an Avro byte[] (raw binary, no embedded schema) into a list of {@link LocationAvro} records.
    */
   private List<LocationAvro> decodeAvroBytes(byte[] avroBytes) throws Exception {
     List<LocationAvro> decoded = new ArrayList<>();
-    try (DataFileReader<LocationAvro> reader = new DataFileReader<>(
-        new SeekableByteArrayInput(avroBytes),
-        new SpecificDatumReader<>(LocationAvro.class))) {
-      reader.forEach(decoded::add);
+    SpecificDatumReader<LocationAvro> reader = new SpecificDatumReader<>(LocationAvro.class);
+    BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(avroBytes, null);
+    while (!decoder.isEnd()) {
+      decoded.add(reader.read(null, decoder));
     }
     return decoded;
   }
@@ -267,6 +268,21 @@ public class LocationAvroConverterTest {
     assertTrue(avroBytes.length > 0);
 
     assertLocationsRoundTrip(locations, decodeAvroBytes(avroBytes));
+  }
+
+  /**
+   * Verifies that the encoded bytes do not contain the Avro object-container magic bytes
+   * ("Obj\x01"), confirming that the schema is not embedded.
+   */
+  @Test
+  public void testEncodeListDoesNotEmbedSchema() throws Exception {
+    List<Location> locations = loadLocations();
+    byte[] avroBytes = LocationAvroConverter.encode(locations);
+    // Avro object-container files start with "Obj\x01" (4 bytes)
+    if (avroBytes.length >= 4) {
+      assertFalse(avroBytes[0] == 'O' && avroBytes[1] == 'b' && avroBytes[2] == 'j' && avroBytes[3] == 0x01,
+          "Encoded bytes must not start with Avro object-container magic bytes");
+    }
   }
 
   /**

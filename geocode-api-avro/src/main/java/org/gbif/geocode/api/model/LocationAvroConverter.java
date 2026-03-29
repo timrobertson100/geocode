@@ -21,8 +21,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -171,11 +172,10 @@ public class LocationAvroConverter {
   }
 
   /**
-   * Encodes a list of {@link Location} objects to a single Avro binary container as a
-   * {@code byte[]}.
+   * Encodes a list of {@link Location} objects to Avro binary as a {@code byte[]}.
    *
-   * <p>The result uses the Avro object-container format (with embedded schema) so it can be
-   * decoded independently.
+   * <p>The result uses raw Avro binary encoding (no embedded schema) for compactness.
+   * The records are written sequentially using {@link BinaryEncoder}.
    *
    * @param locations the locations to encode; must not be {@code null}
    * @return Avro-serialized bytes for the entire list
@@ -183,13 +183,12 @@ public class LocationAvroConverter {
    */
   public static byte[] encode(List<Location> locations) throws IOException {
     DatumWriter<LocationAvro> datumWriter = new SpecificDatumWriter<>(LocationAvro.class);
-    try (ByteArrayOutputStream out = new ByteArrayOutputStream();
-         DataFileWriter<LocationAvro> writer = new DataFileWriter<>(datumWriter)) {
-      writer.create(LocationAvro.getClassSchema(), out);
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(out, null);
       for (Location location : locations) {
-        writer.append(encode(location));
+        datumWriter.write(encode(location), encoder);
       }
-      writer.flush();
+      encoder.flush();
       return out.toByteArray();
     }
   }

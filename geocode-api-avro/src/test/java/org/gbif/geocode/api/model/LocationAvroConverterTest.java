@@ -20,6 +20,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.file.SeekableByteArrayInput;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
@@ -31,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for {@link LocationAvroConverter}.
@@ -219,5 +223,66 @@ public class LocationAvroConverterTest {
 
     System.out.printf("%,d locations → JSON: %,d bytes | Avro: %,d bytes%n",
         total, jsonFile.length(), avroFile.length());
+  }
+
+  /**
+   * Decodes an Avro byte[] container into a list of {@link LocationAvro} records.
+   */
+  private List<LocationAvro> decodeAvroBytes(byte[] avroBytes) throws Exception {
+    List<LocationAvro> decoded = new ArrayList<>();
+    try (DataFileReader<LocationAvro> reader = new DataFileReader<>(
+        new SeekableByteArrayInput(avroBytes),
+        new SpecificDatumReader<>(LocationAvro.class))) {
+      reader.forEach(decoded::add);
+    }
+    return decoded;
+  }
+
+  /**
+   * Asserts that each decoded {@link LocationAvro} round-trips back to the corresponding
+   * original {@link Location}.
+   */
+  private void assertLocationsRoundTrip(List<Location> expected, List<LocationAvro> actual) {
+    assertEquals(expected.size(), actual.size());
+    for (int i = 0; i < expected.size(); i++) {
+      Location original = expected.get(i);
+      Location roundTripped = LocationAvroConverter.decode(actual.get(i));
+      assertEquals(original.getId(), roundTripped.getId());
+      assertEquals(original.getType(), roundTripped.getType());
+      assertEquals(original.getSource(), roundTripped.getSource());
+      assertEquals(original.getTitle(), roundTripped.getTitle());
+    }
+  }
+
+  /**
+   * Verifies that {@link LocationAvroConverter#encode(List)} produces a non-empty Avro byte[]
+   * whose decoded records round-trip back to the original Locations.
+   */
+  @Test
+  public void testEncodeListReturnsByteArray() throws Exception {
+    List<Location> locations = loadLocations();
+
+    byte[] avroBytes = LocationAvroConverter.encode(locations);
+    assertNotNull(avroBytes);
+    assertTrue(avroBytes.length > 0);
+
+    assertLocationsRoundTrip(locations, decodeAvroBytes(avroBytes));
+  }
+
+  /**
+   * Verifies that {@link LocationAvroConverter#fromJson(byte[])} converts the
+   * {@link ObjectMapper} JSON encoding of a {@code List<Location>} into Avro bytes whose
+   * decoded records match the originals.
+   */
+  @Test
+  public void testFromJsonReturnsByteArray() throws Exception {
+    List<Location> locations = loadLocations();
+    byte[] jsonBytes = MAPPER.writeValueAsBytes(locations);
+
+    byte[] avroBytes = LocationAvroConverter.fromJson(jsonBytes);
+    assertNotNull(avroBytes);
+    assertTrue(avroBytes.length > 0);
+
+    assertLocationsRoundTrip(locations, decodeAvroBytes(avroBytes));
   }
 }

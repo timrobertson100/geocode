@@ -15,8 +15,18 @@
  */
 package org.gbif.geocode.api.model;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.io.DatumWriter;
+import org.apache.avro.specific.SpecificDatumWriter;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Provides conversion between {@link Location} and {@link LocationAvro}.
@@ -69,6 +79,8 @@ public class LocationAvroConverter {
   static {
     ID_PREFIX_URL_MAP.put(LocationIdPrefix.MRGID, "http://marineregions.org/mrgid/");
   }
+
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   /**
    * Encodes a {@link Location} to a {@link LocationAvro}.
@@ -144,5 +156,44 @@ public class LocationAvroConverter {
     location.setDistance(locationAvro.getDistance());
     location.setDistanceMeters(locationAvro.getDistanceMeters());
     return location;
+  }
+
+  /**
+   * Encodes a list of {@link Location} objects to a single Avro binary container as a
+   * {@code byte[]}.
+   *
+   * <p>The result uses the Avro object-container format (with embedded schema) so it can be
+   * decoded independently.
+   *
+   * @param locations the locations to encode; must not be {@code null}
+   * @return Avro-serialized bytes for the entire list
+   * @throws IOException if writing to the byte-array stream fails
+   */
+  public static byte[] encode(List<Location> locations) throws IOException {
+    DatumWriter<LocationAvro> datumWriter = new SpecificDatumWriter<>(LocationAvro.class);
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+         DataFileWriter<LocationAvro> writer = new DataFileWriter<>(datumWriter)) {
+      writer.create(LocationAvro.getClassSchema(), out);
+      for (Location location : locations) {
+        writer.append(encode(location));
+      }
+      writer.flush();
+      return out.toByteArray();
+    }
+  }
+
+  /**
+   * Converts a {@code byte[]} that contains the {@link ObjectMapper} JSON encoding of a
+   * {@code List<Location>} into a single Avro binary container as a {@code byte[]}.
+   *
+   * <p>The JSON must be a JSON array whose elements match the {@link Location} bean structure.
+   *
+   * @param json the JSON bytes produced by {@code ObjectMapper.writeValueAsBytes(listOfLocations)}
+   * @return Avro-serialized bytes for the entire list
+   * @throws IOException if parsing the JSON or writing Avro bytes fails
+   */
+  public static byte[] fromJson(byte[] json) throws IOException {
+    List<Location> locations = OBJECT_MAPPER.readValue(json, new TypeReference<List<Location>>() {});
+    return encode(locations);
   }
 }

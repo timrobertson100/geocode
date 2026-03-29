@@ -59,10 +59,20 @@ public class LocationAvroConverter {
   private static final Map<LocationSource, String> SOURCE_URL_MAP = new LinkedHashMap<>();
 
   static {
-    addSource("http://gadm.org/",                      LocationSource.GADM);
-    addSource("http://www.tdwg.org/standards/109",     LocationSource.WGSRPD);
+    addSource("https://gadm.org/",                      LocationSource.GADM);
+    addSource("https://www.tdwg.org/standards/109",     LocationSource.WGSRPD);
     addSource("https://github.com/gbif/continents",    LocationSource.CONTINENT);
     addSource("https://www.marineregions.org/",        LocationSource.MARINE_REGIONS);
+
+    addSource("http://gadm.org/",                      LocationSource.GADM);
+    addSource("http://www.tdwg.org/standards/109",     LocationSource.WGSRPD);
+    addSource("http://github.com/gbif/continents",    LocationSource.CONTINENT);
+    addSource("http://www.marineregions.org/",        LocationSource.MARINE_REGIONS);
+
+    addSource("http://marineregions.org/",        LocationSource.MARINE_REGIONS);
+    addSource("https://marineregions.org/",        LocationSource.MARINE_REGIONS);
+
+    addSource("https://www.iucnredlist.org/", LocationSource.IUCN);
   }
 
   private static void addSource(String url, LocationSource source) {
@@ -79,6 +89,7 @@ public class LocationAvroConverter {
 
   static {
     ID_PREFIX_URL_MAP.put(LocationIdPrefix.MRGID, "http://marineregions.org/mrgid/");
+    ID_PREFIX_URL_MAP.put(LocationIdPrefix.MRGID, "https://marineregions.org/mrgid/");
   }
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

@@ -28,7 +28,7 @@
         "name": "LocationType",
         "namespace": "org.gbif.geocode.api.model",
         "doc": "Known types for location features. Add new values here as needed.",
-        "symbols": ["GADM0", "GADM1", "GADM2", "GADM3", "WGSRPD", "Continent", "Political"]
+        "symbols": ["GADM0", "GADM1", "GADM2", "GADM3", "WGSRPD", "Continent", "Political", "IHO"]
       },
       "doc": "Type; GBIF-assigned identifier for the source."
     },
@@ -39,7 +39,7 @@
         "name": "LocationSource",
         "namespace": "org.gbif.geocode.api.model",
         "doc": "Known sources for location features. Add new values here as needed.",
-        "symbols": ["GADM", "WGSRPD", "CONTINENT", "MARINE_REGIONS"]
+        "symbols": ["GADM", "WGSRPD", "CONTINENT", "MARINE_REGIONS", "IUCN"]
       },
       "doc": "Source of the location feature, encoded as an enum to minimise bytes."
     },

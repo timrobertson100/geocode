@@ -26,6 +26,7 @@ import org.apache.avro.io.DatumWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -183,17 +184,28 @@ public class LocationAvroConverter {
   }
 
   /**
-   * Converts a {@code byte[]} that contains the {@link ObjectMapper} JSON encoding of a
-   * {@code List<Location>} into a single Avro binary container as a {@code byte[]}.
+   * Converts a {@code byte[]} that contains a GeoCode JSON response into a single Avro binary
+   * container as a {@code byte[]}.
    *
-   * <p>The JSON must be a JSON array whose elements match the {@link Location} bean structure.
+   * <p>The JSON may be either:
+   * <ul>
+   *   <li>A GeoCode response object: {@code {"locations":[...]}} — the {@code locations} array
+   *       is extracted and converted.</li>
+   *   <li>A plain JSON array: {@code [{...}, ...]} — converted directly.</li>
+   * </ul>
    *
-   * @param json the JSON bytes produced by {@code ObjectMapper.writeValueAsBytes(listOfLocations)}
+   * @param json the JSON bytes (GeoCode response or plain list of locations)
    * @return Avro-serialized bytes for the entire list
    * @throws IOException if parsing the JSON or writing Avro bytes fails
    */
   public static byte[] fromJson(byte[] json) throws IOException {
-    List<Location> locations = OBJECT_MAPPER.readValue(json, new TypeReference<List<Location>>() {});
+    JsonNode root = OBJECT_MAPPER.readTree(json);
+    List<Location> locations;
+    if (root.isObject() && root.has("locations")) {
+      locations = OBJECT_MAPPER.convertValue(root.get("locations"), new TypeReference<List<Location>>() {});
+    } else {
+      locations = OBJECT_MAPPER.convertValue(root, new TypeReference<List<Location>>() {});
+    }
     return encode(locations);
   }
 }

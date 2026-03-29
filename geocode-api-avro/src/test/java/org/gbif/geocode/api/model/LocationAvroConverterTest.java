@@ -270,9 +270,29 @@ public class LocationAvroConverterTest {
   }
 
   /**
+   * Verifies that {@link LocationAvroConverter#fromJson(byte[])} converts a GeoCode response
+   * ({"locations":[...]}) into Avro bytes whose decoded records match the originals.
+   */
+  @Test
+  public void testFromJsonGeocodeResponseFormat() throws Exception {
+    List<Location> locations = loadLocations();
+    byte[] jsonBytes;
+    try (InputStream in = getClass().getResourceAsStream("/locations.json")) {
+      assertNotNull(in, "locations.json resource not found");
+      jsonBytes = in.readAllBytes();
+    }
+
+    byte[] avroBytes = LocationAvroConverter.fromJson(jsonBytes);
+    assertNotNull(avroBytes);
+    assertTrue(avroBytes.length > 0);
+
+    assertLocationsRoundTrip(locations, decodeAvroBytes(avroBytes));
+  }
+
+  /**
    * Verifies that {@link LocationAvroConverter#fromJson(byte[])} converts the
-   * {@link ObjectMapper} JSON encoding of a {@code List<Location>} into Avro bytes whose
-   * decoded records match the originals.
+   * {@link ObjectMapper} JSON encoding of a {@code List<Location>} (plain array) into Avro bytes
+   * whose decoded records match the originals.
    */
   @Test
   public void testFromJsonReturnsByteArray() throws Exception {

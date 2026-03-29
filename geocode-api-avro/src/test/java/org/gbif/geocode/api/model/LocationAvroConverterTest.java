@@ -146,7 +146,7 @@ public class LocationAvroConverterTest {
 
   @Test
   public void testEncodeNullReturnsNull() {
-    assertNull(LocationAvroConverter.encode(null));
+    assertNull(LocationAvroConverter.encode((Location)null));
   }
 
   @Test

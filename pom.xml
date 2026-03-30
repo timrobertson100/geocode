@@ -62,7 +62,6 @@
 
   <modules>
     <module>geocode-api</module>
-    <module>geocode-api-avro</module>
     <module>geocode-ws</module>
     <module>geocode-ws-client</module>
   </modules>
@@ -107,6 +106,7 @@
     <curator-framework.version>5.5.0-disable-connectstr-updates</curator-framework.version>
     <curator.version>5.5.0</curator.version>
     <curator-test.version>5.5.0</curator-test.version>
+    <avro.version>1.11.4</avro.version>
     <!-- Matched to version used by au.org.ala.layers-store -->
     <geotools.version>24.4.01</geotools.version>
 
@@ -295,8 +295,6 @@
         <artifactId>gt-referencing</artifactId>
         <version>${geotools.version}</version>
       </dependency>
-
-      <!-- Third party dependencies -->
       <dependency>
         <groupId>io.github.openfeign</groupId>
         <artifactId>feign-jackson</artifactId>
@@ -354,6 +352,11 @@
             <artifactId>zookeeper</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro</artifactId>
+        <version>${avro.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.curator</groupId>
